@@ -13,4 +13,12 @@ Short recommendations from building the assistant. Details: [docs/threshold-cali
 - **Keys only in `.env`**, read in n8n with `$env.*`; review exported workflows before committing.
 - **Use AI in your own branch** and understand every generated line: each member must be able to explain their code.
 
+## How the AI helped (member C, Mic022)
+
+- **Project template:** the starting skeleton (Docker Compose, Spring Boot with the n8n client, error handling and RAG settings, frontend shell and work plan) was generated with an AI coding assistant and reviewed before each commit.
+- **Threshold calibration:** it wrote the script that scores 94 questions against the 25 articles and showed that 0.60 is the lowest value that keeps every question without an article out.
+- **Chat model choice:** it compared five models on the same grounded task, including an incident with injected instructions, before choosing Claude Haiku 5.5.
+- **Test 8 (embedding failure):** it simulated an invalid OpenRouter key by restarting n8n and restoring it, and found that the stored error hid which step had failed.
+- **End-to-end checks:** it found the HTTP/2 (`h2c`) timeout between Java and n8n that mocked tests missed, and tested the assistant view in a headless browser.
+
 Member A's notes: [docs/data-analysis-report/ai-usage.md](docs/data-analysis-report/ai-usage.md).
