@@ -55,5 +55,30 @@ time per category (41.34, 32.51, 25.52, 10.96 and 4.17 hours), priority distribu
 | `GET /api/analytics/summary?from=2026-11-01&to=2026-10-01` | 400, "La fecha inicial no puede ser posterior a la final" ✅ |
 | `GET /api/analytics/by-priority?priority=P9` | 400 (unit test `AnalyticsControllerTest`) ✅ |
 
-Dashboard screenshots: add them here (`dashboard-weekly.png`, `dashboard-category.png`) when
-taking the presentation evidence.
+## Screenshots
+
+Taken with the same seeded database (Edge, 1400 px wide).
+
+**Test 4.** Dashboard filtered by *Aplicaciones*: 27 incidents, 22 resolved (81.48 %), 41.34 h.
+
+![Dashboard filtered by Aplicaciones](evidence/analytics-test4-dashboard.png)
+
+Incident list filtered by *Aplicaciones*: 27 rows, all of that category.
+
+![Incident list filtered by Aplicaciones](evidence/analytics-test4-incidents.png)
+
+The same counts in psql:
+
+![psql counts for category 4](evidence/analytics-test4-sql.png)
+
+**Test 5.** Dashboard without filters: weekly chart from 10/08 to 26/10.
+
+![Dashboard weekly trend](evidence/analytics-test5-weekly.png)
+
+`weekly_trend.sql` in psql, the same 12 values:
+
+![weekly_trend.sql output](evidence/analytics-test5-sql.png)
+
+While taking these screenshots, the filtered weekly chart skipped the week of 31/08 (no
+*Aplicaciones* incidents) and joined 24/08 directly with 07/09. The dashboard now fills weeks with
+no incidents with 0, as the test 4 screenshot shows.
