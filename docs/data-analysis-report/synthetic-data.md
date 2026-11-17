@@ -6,8 +6,20 @@ always produces the same file and every indicator in this report can be recalcul
 
 ```bash
 python scripts/generate_seed.py            # rewrites database/init/02_seed.sql
-docker compose down -v && docker compose up -d   # reloads the database (deletes current data)
 ```
+
+The init scripts only run when the PostgreSQL volume is empty. To load a new seed, recreate only
+that volume, as described in the [README troubleshooting](../../README.md#troubleshooting)
+(this deletes the database data):
+
+```bash
+docker compose stop backend postgres && docker compose rm -f postgres
+docker volume rm <project>_postgres_data    # check the name with: docker volume ls
+docker compose up -d
+```
+
+Then reindex the articles in Qdrant (README, step 3). Do not use `docker compose down -v`: it also
+deletes the n8n and Qdrant volumes.
 
 Do not edit `02_seed.sql` by hand: change the script or its inputs and regenerate it.
 

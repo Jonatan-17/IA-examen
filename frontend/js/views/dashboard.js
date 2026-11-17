@@ -118,7 +118,8 @@ function renderKpis(body, summary) {
         : '—');
 }
 
-function renderCharts(body, { byCategory, resolutionTime, weekly, byPriority }) {
+function renderCharts(body, { byCategory, resolutionTime, weekly: rows, byPriority }) {
+    const weekly = fillEmptyWeeks(rows);
     drawChart(body, 'weekly', 'line', weekly.map(w => formatWeek(w.periodStart)), weekly.map(w => w.incidents),
         'Incidentes');
     drawChart(body, 'category', 'bar', byCategory.map(c => c.category), byCategory.map(c => c.incidents),
@@ -175,6 +176,24 @@ const NUMBER = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
 
 function formatNumber(value) {
     return NUMBER.format(value);
+}
+
+/**
+ * SQL only returns weeks that have incidents. With filters some weeks are empty, and skipping them
+ * would join two distant weeks in the line chart, so the missing weeks are added with 0.
+ */
+function fillEmptyWeeks(rows) {
+    if (rows.length === 0) return rows;
+    const counts = new Map(rows.map(r => [r.periodStart, r.incidents]));
+    const filled = [];
+    // Week starts are plain dates: UTC arithmetic avoids any daylight saving shift
+    const day = new Date(`${rows[0].periodStart}T00:00:00Z`);
+    const last = rows[rows.length - 1].periodStart;
+    for (let iso = rows[0].periodStart; iso <= last; iso = day.toISOString().slice(0, 10)) {
+        filled.push({ periodStart: iso, incidents: counts.get(iso) ?? 0 });
+        day.setUTCDate(day.getUTCDate() + 7);
+    }
+    return filled;
 }
 
 /** "2026-08-10" → "10/08". Parsed by hand: new Date() would read it as UTC and show the previous day. */
