@@ -101,7 +101,7 @@ Evidence: [history-rating-tests.md](history-rating-tests.md), Swagger screenshot
 
 | Check | How | Result |
 |---|---|---|
-| API regression | [Postman collection](../postman/README.md) with newman: the 26 endpoints, including error cases | 36 requests, 48 assertions, 0 failures |
+| API regression | [Postman collection](../postman/README.md) with newman: the 31 endpoints, including error cases and analytics cross-checks | 45 requests, 70 assertions, 0 failures |
 | Backend unit tests | `mvn test` in `backend/` (services, validation, filters) | Passing, run before every module PR |
 | Threshold calibration | 75 relevant incidents and 19 questions without an article, against the 25 articles ([report](../threshold-calibration.md)) | At 0.60 no question without an article passes (0/19), and 67/75 relevant incidents find their article. The 8 misses get `NO_RESULTS` instead of a wrong answer |
 

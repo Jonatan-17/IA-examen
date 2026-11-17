@@ -1,6 +1,6 @@
 # API collection and Swagger evidence
 
-- **Postman collection:** [`incidents-rag.postman_collection.json`](incidents-rag.postman_collection.json). It has 36 requests over the 26 endpoints of the Spring Boot API, and each one checks its response.
+- **Postman collection:** [`incidents-rag.postman_collection.json`](incidents-rag.postman_collection.json). It has 45 requests over the 31 endpoints of the Spring Boot API, and each one checks its response.
 - **Swagger UI:** <http://localhost:8080/swagger-ui.html> (OpenAPI JSON at `/v3/api-docs`).
 
 ## Before running it
@@ -19,7 +19,7 @@
 npx newman run docs/postman/incidents-rag.postman_collection.json --timeout-request 90000
 ```
 
-A full run takes about one minute, most of it in the reindex and the two assistant calls. The last run against the Docker stack had **36 requests, 48 assertions and 0 failures**.
+A full run takes about one minute, most of it in the reindex and the two assistant calls. The last run against the Docker stack had **45 requests, 70 assertions and 0 failures**.
 
 Things to know before running it:
 - **Data:** each run creates one category, one user, one incident, one article, two AI queries and one rating.
@@ -45,7 +45,8 @@ Things to know before running it:
 | 4. Knowledge base | Create, update (keeps `verified` when the field is omitted), deactivate, activate, reindex | 6 |
 | 5. AI assistant | `ANSWERED` with sources, `NO_RESULTS` with no invented answer, 400 when the description is blank | 1, 3, 7 |
 | 6. History and rating | History with sources and similarities, rating, 409 on a second rating, 400 when the score is out of range, 404 when the answer does not exist | 9, 10 |
-| 7. Cleanup | 409 when deleting a category or user that still has incidents | |
+| 7. Analytics | The 6 dashboard endpoints. The breakdowns by category, priority, week and month must add up to the summary total, and percentages to 100. Also covers the category filter, all filters together, and a 400 for an inverted date range | 4, 5 (consistency) |
+| 8. Cleanup | 409 when deleting a category or user that still has incidents | |
 
 ## Swagger screenshots
 
