@@ -94,9 +94,9 @@ Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-ba
 
 **Phase 3**
 - [x] Calibrate the threshold with relevant and irrelevant questions, and document the result
-- [ ] Tests 1, 2, 3, 6, 7 and 8 (test 8 uses an invalid API key)
+- [x] Tests 1, 2, 3, 6, 7 and 8 (test 8 uses an invalid API key)
 - [x] Export the workflows to `n8n/workflows/` and check that they contain no keys
-- [ ] Architecture diagram
+- [x] Architecture diagram
 
 Branches: `feature/n8n-indexing`, `feature/n8n-rag`, `feature/rag-assistant`, `feature/assistant-ui`
 
