@@ -14,6 +14,57 @@ Frontend (nginx) ──/api──► Spring Boot ──► PostgreSQL
 
 The frontend only consumes Spring Boot. n8n, Qdrant and OpenRouter are never called from the browser.
 
+Detailed diagrams:
+- [Architecture, RAG query and indexing sequences](docs/diagrams/architecture.md)
+- [Entity-relationship diagram](docs/diagrams/er-diagram.md)
+
+## Features
+
+| View | Requirements | What it does |
+|---|---|---|
+| **Incidentes** | RF01 | Register incidents. Filter them by category, priority, status and date range. Change their status; resolving an incident records `resolved_at`. Categories and users are managed through the API. |
+| **Base de conocimiento** | RF02, RF03 | Create and edit technical articles (problem, symptoms, cause, solution), mark them as verified, and activate or deactivate them. Every change is synced with Qdrant after the transaction commits. Only active and verified articles are used as AI sources. |
+| **Asistente IA** | RF04, RF05 | Describe an incident and get a solution with steps, built only from knowledge articles, with each source and its similarity. If nothing is similar enough, it says so instead of making up an answer. |
+| **Dashboard** | RF06, RF07 | Incident indicators and charts computed with SQL queries. *Pending (member A).* |
+| **Historial** | RF08 | Every AI query of an incident with its status, answer, sources and similarities. Each answer can be rated once, from 1 to 5, with an optional comment. |
+
+AI queries go through four statuses: **Pendiente** (`PENDING`), **Respondida** (`ANSWERED`), **Sin resultados** (`NO_RESULTS`) and **Error** (`ERROR`).
+
+## API
+
+Base URL: `http://localhost:8080/api`, or `http://localhost:8081/api` through nginx. Every endpoint is documented in Swagger (`/swagger-ui.html`) and covered by the [Postman collection](docs/postman/README.md).
+
+| Resource | Endpoints |
+|---|---|
+| Categories | `GET/POST /categories`, `GET/PUT/DELETE /categories/{id}` |
+| Users | `GET/POST /users`, `GET/PUT/DELETE /users/{id}` |
+| Incidents | `GET /incidents?categoryId&priority&status&from&to`, `POST /incidents`, `GET /incidents/{id}`, `PATCH /incidents/{id}/status` |
+| Knowledge base | `GET/POST /knowledge-articles`, `GET/PUT /knowledge-articles/{id}`, `PATCH /knowledge-articles/{id}/activate`, `PATCH /knowledge-articles/{id}/deactivate`, `POST /knowledge-articles/reindex` |
+| AI assistant | `POST /incidents/{incidentId}/assistance` |
+| History and rating | `GET /incidents/{incidentId}/queries`, `POST /responses/{responseId}/rating` |
+| Analytics | `/analytics/...` *Pending (member A).* |
+| System | `GET /info` (status and active RAG configuration) |
+
+Errors share one JSON shape (`status`, `error`, `message`, `path`, `fields`) with messages in Spanish:
+- **400:** validation failed; `fields` maps each field to its error.
+- **404:** the resource does not exist.
+- **409:** a business rule conflict, such as a duplicate name or email, deleting a category or user that still has incidents, or rating an answer twice.
+
+## Business rules
+
+- **Spring Boot is the only entry point.** The browser never calls n8n, Qdrant or OpenRouter, and n8n webhooks require a shared secret (`X-Webhook-Secret`).
+- **Answers come only from valid sources.**
+  - n8n keeps only the articles at or above the similarity threshold (0.60). If none passes, it returns `NO_RESULTS` without calling the language model.
+  - Spring Boot then checks again that every source exists and is active in PostgreSQL.
+- **An empty description never runs the AI flow.** It is rejected with 400 before any query is stored.
+- **AI failures do not break the request.** The query is stored as `ERROR`, with the step that failed.
+- **Data integrity:**
+  - Category names and user emails are unique.
+  - Categories and users that have incidents cannot be deleted.
+  - Articles are deactivated, never deleted, so old answers keep their sources.
+  - One rating per answer.
+- **Keys and credentials** live only in `.env` (see [`.env.example`](.env.example)).
+
 ## Structure
 
 ```
