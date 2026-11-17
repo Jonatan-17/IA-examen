@@ -62,7 +62,7 @@ Branches: `feature/db-schema`, `feature/synthetic-data`, `feature/analytics-api`
 **Phase 3**
 - [x] Postman collection with every endpoint, plus Swagger screenshots in `docs/postman/`
 - [x] Tests 9 and 10
-- [ ] Consolidate the testing document with the evidence provided by A and C (done for C; waiting for A's tests 4 and 5)
+- [x] Consolidate the testing document with the evidence provided by A and C
 - [x] Final README
 
 Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-base`, `feature/history-rating`
