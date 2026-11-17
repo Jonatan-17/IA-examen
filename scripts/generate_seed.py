@@ -32,6 +32,14 @@ WORK_HOURS = (7, 18)           # incidents are created between 07:00 and 18:59
 NO_ARTICLE_TOPIC_WEIGHT = 0.3  # topics without an article are rare (test 3)
 PRIORITY_WEIGHTS = {"P1": 10, "P2": 25, "P3": 40, "P4": 25}
 
+# Moment the data "was extracted": anything resolving later is still unresolved
+SNAPSHOT_AT = datetime(2026, 11, 2, 9, 0, tzinfo=BOGOTA)
+# Urgent incidents are attended faster: multiplies the category resolution_hours
+PRIORITY_SPEED = {"P1": 0.4, "P2": 0.7, "P3": 1.0, "P4": 1.3}
+STALLED_RATE = 0.08            # incidents left unresolved (waiting on a third party, etc.)
+CLOSE_AFTER = timedelta(hours=48)  # resolved incidents older than this are already CLOSED
+CLOSE_RATE = 0.6               # ...but not every resolved incident gets formally closed
+
 USER_COUNT = 10
 EMAIL_DOMAIN = "empresa.com"
 FIRST_NAMES = ["Laura", "Andrés", "Camila", "Julián", "Valentina", "Santiago",
@@ -126,7 +134,7 @@ def pick_topic(rng, category):
 
 
 def generate_incidents(rng, categories, users):
-    """150 open incidents spread over dates, categories, topics, users and priorities.
+    """150 incidents spread over dates, categories, topics, users and priorities.
     Ids follow creation order, like a real system."""
     days, weights = day_weights()
     category_weights = [c["weight"] for c in categories]
@@ -150,7 +158,31 @@ def generate_incidents(rng, categories, users):
     incidents.sort(key=lambda i: i["created_at"])
     for i, incident in enumerate(incidents, start=1):
         incident["id"] = i
+        assign_status(rng, incident, categories[incident["category_id"] - 1])
     return incidents
+
+
+def assign_status(rng, incident, category):
+    """Status and resolved_at consistent with the schema CHECKs:
+    resolved_at is set only for RESOLVED/CLOSED and is never before created_at."""
+    low, high = category["resolution_hours"]
+    hours = rng.uniform(low, high) * PRIORITY_SPEED[incident["priority"]]
+    resolved_at = incident["created_at"] + timedelta(hours=hours)
+
+    if rng.random() < STALLED_RATE or resolved_at > SNAPSHOT_AT:
+        # Still unresolved at extraction time: someone may already be working on it
+        incident["status"] = rng.choice(["OPEN", "IN_PROGRESS"])
+        incident["resolved_at"] = None
+        incident["updated_at"] = incident["created_at"]
+        if incident["status"] == "IN_PROGRESS":
+            taken = timedelta(minutes=rng.randint(10, 240))
+            incident["updated_at"] = min(incident["created_at"] + taken, SNAPSHOT_AT)
+        return
+
+    closed = SNAPSHOT_AT - resolved_at > CLOSE_AFTER and rng.random() < CLOSE_RATE
+    incident["status"] = "CLOSED" if closed else "RESOLVED"
+    incident["resolved_at"] = resolved_at
+    incident["updated_at"] = resolved_at
 
 
 def sql_timestamp(value):
@@ -161,12 +193,13 @@ def incidents_sql(incidents):
     lines = [
         "-- Incidents",
         "INSERT INTO incidents (id, title, description, category_id, user_id, priority, status,"
-        " created_at, updated_at) VALUES",
+        " created_at, updated_at, resolved_at) VALUES",
     ]
     rows = [
         f"    ({i['id']}, {sql_text(i['title'])}, {sql_text(i['description'])}, {i['category_id']},"
-        f" {i['user_id']}, {sql_text(i['priority'])}, 'OPEN',"
-        f" {sql_timestamp(i['created_at'])}, {sql_timestamp(i['created_at'])})"
+        f" {i['user_id']}, {sql_text(i['priority'])}, {sql_text(i['status'])},"
+        f" {sql_timestamp(i['created_at'])}, {sql_timestamp(i['updated_at'])},"
+        f" {sql_timestamp(i['resolved_at']) if i['resolved_at'] else 'NULL'})"
         for i in incidents
     ]
     lines.append(",\n".join(rows) + ";")
