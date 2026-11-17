@@ -156,6 +156,53 @@ After this, creating, editing or deactivating an article from the UI keeps Qdran
 | `port is already allocated` | Another program uses that port. Change the matching `*_PORT` in `.env`. |
 | Changes in `database/init` have no effect | The scripts only run when the volume is empty. Recreate it with `docker compose down -v && docker compose up -d`. This deletes all the data. |
 
+## Testing
+
+**Unit tests (backend):**
+
+```bash
+cd backend && mvn test        # needs Maven 3.9+ and Java 21
+
+# or without installing anything, with the same image the Dockerfile builds with:
+docker run --rm -v "$PWD/backend":/app -w /app maven:3.9-eclipse-temurin-21 mvn -q test
+```
+
+**Mandatory functional tests:**
+
+| # | Test | Evidence |
+|---:|---|---|
+| 1 | Connectivity incident gets relevant solutions through RAG | [AI tests](docs/testing/ai-tests.md) |
+| 2 | Application runtime error retrieves the right articles | [AI tests](docs/testing/ai-tests.md) |
+| 3 | Not enough information: the model does not make up a solution | [AI tests](docs/testing/ai-tests.md) |
+| 4 | Incidents of a category match the relational database | *Pending (member A)* |
+| 5 | Weekly trend matches the SQL queries | *Pending (member A)* |
+| 6 | A deactivated article is no longer used as a source | [AI tests](docs/testing/ai-tests.md) |
+| 7 | A blank description does not run the AI flow | [AI tests](docs/testing/ai-tests.md) |
+| 8 | Embedding service failure is handled | [AI tests](docs/testing/ai-tests.md) |
+| 9 | History of the AI assistance of an incident | [History and rating tests](docs/testing/history-rating-tests.md) |
+| 10 | Rating an answer is stored | [History and rating tests](docs/testing/history-rating-tests.md) |
+
+Ways to repeat them:
+- **AI tests:** `python3 -I scripts/testing/run_ai_tests.py` runs tests 1, 2, 3, 6, 7 and 8 through the API.
+- **Postman collection:** covers tests 1, 3, 6, 7, 9 and 10.
+
+## Deliverables
+
+| Deliverable | Where |
+|---|---|
+| Frontend | [`frontend/`](frontend/) |
+| Spring Boot backend | [`backend/`](backend/) |
+| SQL script with initial data | [`database/init/`](database/init/) (schema and seed) |
+| ER and architecture diagrams | [`docs/diagrams/`](docs/diagrams/) |
+| n8n workflows (JSON) | [`n8n/workflows/`](n8n/workflows/) |
+| Docker Compose | [`docker-compose.yml`](docker-compose.yml) |
+| `.env.example` | [`.env.example`](.env.example) |
+| Swagger and Postman evidence | [`docs/postman/`](docs/postman/README.md) |
+| Testing document | [`docs/testing/`](docs/testing/) |
+| Data analysis report | [`docs/data-analysis-report/`](docs/data-analysis-report/) *Pending (member A)* |
+| RAG decisions | [Threshold calibration](docs/threshold-calibration.md), [chat model selection](docs/chat-model-selection.md), [knowledge topics](docs/knowledge-topics.md) |
+| AI usage | [`AI_USAGE.md`](AI_USAGE.md) |
+
 ## Conventions
 
 - **Language:** code, comments, commits, PRs and documentation in English. User-visible frontend text (labels, buttons, messages) and user-facing data (incidents, knowledge articles, AI answers) in Spanish.
