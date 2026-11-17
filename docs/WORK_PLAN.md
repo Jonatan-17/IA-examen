@@ -88,7 +88,7 @@ Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-ba
 - [x] **n8n flow 2 (RAG)**: embedding, Qdrant search, threshold filter, grounded prompt and JSON response
 - [x] If nothing passes the threshold, return `NO_RESULTS` without calling the LLM
 - [x] `AiQueryService`: create the query as PENDING, call n8n and validate that the sources exist and are active in the database
-- [ ] Save the answer and its sources, with status ANSWERED, NO_RESULTS or ERROR
+- [x] Save the answer and its sources, with status ANSWERED, NO_RESULTS or ERROR
 - [x] Endpoint `POST /api/incidents/{id}/assistance` with `@NotBlank` on the description
 - [x] **AI assistant** view: solution, steps, sources and similarities
 
