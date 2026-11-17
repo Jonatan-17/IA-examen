@@ -51,6 +51,9 @@ AREAS = ["Finanzas", "Ventas", "Recursos Humanos", "Operaciones", "Logística",
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = ROOT / "scripts" / "catalog.json"
+ARTICLES_PATH = ROOT / "scripts" / "articles.json"
+# The knowledge base was written the week before the first incident
+ARTICLES_CREATED_AT = datetime(2026, 8, 3, 9, 0, tzinfo=BOGOTA)
 DEFAULT_OUTPUT = ROOT / "database" / "init" / "02_seed.sql"
 
 
@@ -206,6 +209,29 @@ def incidents_sql(incidents):
     return lines
 
 
+def load_articles():
+    with ARTICLES_PATH.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def articles_sql(articles):
+    """The 25 articles written by member C, active and verified, with ids 1..25 in file order.
+    No randomness here, so adding them does not change the generated incidents."""
+    lines = [
+        "-- Knowledge articles",
+        "INSERT INTO knowledge_articles (id, title, problem, symptoms, cause, solution,"
+        " active, verified, created_at, updated_at) VALUES",
+    ]
+    created_at = sql_timestamp(ARTICLES_CREATED_AT)
+    rows = [
+        f"    ({i}, {sql_text(a['title'])}, {sql_text(a['problem'])}, {sql_text(a['symptoms'])},"
+        f" {sql_text(a['cause'])}, {sql_text(a['solution'])}, TRUE, TRUE, {created_at}, {created_at})"
+        for i, a in enumerate(articles, start=1)
+    ]
+    lines.append(",\n".join(rows) + ";")
+    return lines
+
+
 def reset_sequence_sql(table):
     """Explicit ids do not advance the sequence; move it past the max id."""
     return f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), (SELECT max(id) FROM {table}));"
@@ -219,7 +245,8 @@ def build_seed(rng):
         categories_sql(categories),
         users_sql(users),
         incidents_sql(incidents),
-        [reset_sequence_sql("categories"), reset_sequence_sql("users"), reset_sequence_sql("incidents")],
+        articles_sql(load_articles()),
+        [reset_sequence_sql(table) for table in ("categories", "users", "incidents", "knowledge_articles")],
     ]
     return sections
 
