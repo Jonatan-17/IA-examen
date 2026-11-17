@@ -1,0 +1,446 @@
+{
+  "info": {
+    "name": "Incidentes TI con RAG",
+    "description": "Every endpoint of the Spring Boot API (Campuslands IA 2, project #1).\n\nRun the folders in order (Collection Runner works): each request saves the ids it creates in collection variables, so later requests reuse them. Names and emails get a timestamp suffix, so the collection can be run many times against the same database.\n\nVariables:\n- `baseUrl`: `http://localhost:8080/api` (backend directly). Through nginx use `http://localhost:8081/api`.\n- `categoryId`, `userId`, `incidentId`, `articleId`, `responseId`: filled in by the requests.\n\nThe assistant requests need n8n, Qdrant and a valid OpenRouter key in `.env`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "categoryId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "incidentId", "value": "" },
+    { "key": "articleId", "value": "" },
+    { "key": "responseId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. System",
+      "item": [
+        {
+          "name": "System info",
+          "request": { "method": "GET", "url": "{{baseUrl}}/info" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "1. Categories",
+      "item": [
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Redes {{$timestamp}}\",\n  \"description\": \"Conectividad, Wi-Fi y VPN\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('categoryId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List categories",
+          "request": { "method": "GET", "url": "{{baseUrl}}/categories" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('returns an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ] } }]
+        },
+        {
+          "name": "Get category by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/categories/{{categoryId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/categories/{{categoryId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Redes y conectividad {{$timestamp}}\",\n  \"description\": \"Internet, Wi-Fi, VPN y cableado\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Create category without name (400)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "Get missing category (404)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/categories/999999" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Laura Gómez\",\n  \"email\": \"laura.{{$timestamp}}@campus.test\",\n  \"area\": \"Soporte TI\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('userId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List users",
+          "request": { "method": "GET", "url": "{{baseUrl}}/users" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Get user by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{userId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Laura Gómez\",\n  \"email\": \"laura.gomez.{{$timestamp}}@campus.test\",\n  \"area\": \"Infraestructura\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Create user with invalid email (400)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sin correo\",\n  \"email\": \"no-es-un-correo\",\n  \"area\": \"Soporte TI\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "3. Incidents",
+      "item": [
+        {
+          "name": "Create incident",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/incidents",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Sin internet en el piso 3\",\n  \"description\": \"No hay conexión a internet en el piso 3 desde esta mañana.\",\n  \"categoryId\": {{categoryId}},\n  \"priority\": \"P2\",\n  \"userId\": {{userId}}\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('status defaults to OPEN', () => pm.expect(pm.response.json().status).to.eql('OPEN'));",
+            "pm.collectionVariables.set('incidentId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List incidents",
+          "request": { "method": "GET", "url": "{{baseUrl}}/incidents" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Filter incidents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/incidents?categoryId={{categoryId}}&priority=P2&status=OPEN&from=2026-01-01&to=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["incidents"],
+              "query": [
+                { "key": "categoryId", "value": "{{categoryId}}" },
+                { "key": "priority", "value": "P2", "description": "P1 (Crítica) to P4 (Baja)" },
+                { "key": "status", "value": "OPEN", "description": "OPEN, IN_PROGRESS, RESOLVED or CLOSED" },
+                { "key": "from", "value": "2026-01-01", "description": "yyyy-MM-dd, inclusive" },
+                { "key": "to", "value": "2026-12-31", "description": "yyyy-MM-dd, inclusive" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('every result matches the filters', () => pm.response.json().forEach(i => {",
+            "    pm.expect(i.priority).to.eql('P2');",
+            "    pm.expect(i.status).to.eql('OPEN');",
+            "}));"
+          ] } }]
+        },
+        {
+          "name": "Filter with inverted dates (400)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/incidents?from=2026-12-31&to=2026-01-01" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "Get incident by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/incidents/{{incidentId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Change incident status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/incidents/{{incidentId}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('not resolved yet', () => pm.expect(pm.response.json().resolvedAt).to.be.null);"
+          ] } }]
+        },
+        {
+          "name": "Create incident with unknown category (404)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/incidents",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Categoría inexistente\",\n  \"description\": \"Prueba de validación\",\n  \"categoryId\": 999999,\n  \"priority\": \"P4\",\n  \"userId\": {{userId}}\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "4. Knowledge base",
+      "item": [
+        {
+          "name": "Create article",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/knowledge-articles",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Impresora de red no imprime {{$timestamp}}\",\n  \"problem\": \"La impresora de red no recibe trabajos de impresión.\",\n  \"symptoms\": \"Los documentos quedan en cola y la impresora no responde.\",\n  \"cause\": \"La impresora cambió de IP por DHCP.\",\n  \"solution\": \"Asignar IP fija a la impresora y actualizar el puerto en los equipos.\",\n  \"verified\": true\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('active and verified: usable as AI source', () => pm.expect(pm.response.json().usableAsSource).to.be.true);",
+            "pm.collectionVariables.set('articleId', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "List articles",
+          "request": { "method": "GET", "url": "{{baseUrl}}/knowledge-articles" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Get article by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/knowledge-articles/{{articleId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Update article",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/knowledge-articles/{{articleId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Impresora de red no imprime {{$timestamp}}\",\n  \"problem\": \"La impresora de red no recibe trabajos de impresión.\",\n  \"symptoms\": \"Los documentos quedan en cola y la impresora no responde al ping.\",\n  \"cause\": \"La impresora cambió de IP por DHCP.\",\n  \"solution\": \"Reservar la IP en el DHCP y actualizar el puerto TCP/IP en los equipos.\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('verified is kept when omitted', () => pm.expect(pm.response.json().verified).to.be.true);"
+          ] } }]
+        },
+        {
+          "name": "Deactivate article (test 6)",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/knowledge-articles/{{articleId}}/deactivate" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('no longer usable as AI source', () => pm.expect(pm.response.json().usableAsSource).to.be.false);"
+          ] } }]
+        },
+        {
+          "name": "Activate article",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/knowledge-articles/{{articleId}}/activate" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('usable as AI source again', () => pm.expect(pm.response.json().usableAsSource).to.be.true);"
+          ] } }]
+        },
+        {
+          "name": "Reindex all articles",
+          "request": { "method": "POST", "url": "{{baseUrl}}/knowledge-articles/reindex" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK (502 means the indexing flow reported errors)', () => pm.response.to.have.status(200));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "5. AI assistant",
+      "item": [
+        {
+          "name": "Ask the assistant (test 1, ANSWERED)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/incidents/{{incidentId}}/assistance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"No hay conexión a internet en el piso 3 desde esta mañana.\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('answered with sources', () => {",
+            "    const body = pm.response.json();",
+            "    pm.expect(body.status).to.eql('ANSWERED');",
+            "    pm.expect(body.sources).to.not.be.empty;",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Topic without articles (test 3, NO_RESULTS)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/incidents/{{incidentId}}/assistance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"La impresora 3D no calibra la cama y la primera capa no se adhiere.\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('no results and no invented answer', () => {",
+            "    const body = pm.response.json();",
+            "    pm.expect(body.status).to.eql('NO_RESULTS');",
+            "    pm.expect(body.answer).to.be.null;",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Blank description (test 7, 400)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/incidents/{{incidentId}}/assistance",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"   \"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "6. History and rating",
+      "item": [
+        {
+          "name": "Query history of the incident (test 9)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/incidents/{{incidentId}}/queries" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const answered = pm.response.json().find(q => q.status === 'ANSWERED' && !q.rating);",
+            "pm.test('has an unrated answered query with sources and similarities', () => {",
+            "    pm.expect(answered).to.exist;",
+            "    pm.expect(answered.answer.steps).to.not.be.empty;",
+            "    answered.sources.forEach(s => pm.expect(s.similarity).to.be.within(0, 1));",
+            "});",
+            "if (answered) pm.collectionVariables.set('responseId', answered.responseId);"
+          ] } }]
+        },
+        {
+          "name": "Rate the answer (test 10)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/responses/{{responseId}}/rating",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 5,\n  \"comment\": \"Reiniciar el switch del piso resolvió el problema.\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('rating saved', () => pm.expect(pm.response.json().score).to.eql(5));"
+          ] } }]
+        },
+        {
+          "name": "Rate the same answer again (409)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/responses/{{responseId}}/rating",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 3\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+          ] } }]
+        },
+        {
+          "name": "Score out of range (400)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/responses/{{responseId}}/rating",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 6\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "Rate unknown answer (404)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/responses/999999/rating",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 4\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "7. Cleanup (optional)",
+      "item": [
+        {
+          "name": "Delete category in use (409)",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/categories/{{categoryId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('409 Conflict: the category has incidents', () => pm.response.to.have.status(409));"
+          ] } }]
+        },
+        {
+          "name": "Delete user in use (409)",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('409 Conflict: the user has incidents', () => pm.response.to.have.status(409));"
+          ] } }]
+        }
+      ]
+    }
+  ]
+}
