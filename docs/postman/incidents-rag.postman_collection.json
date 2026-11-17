@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Incidentes TI con RAG",
-    "description": "Every endpoint of the Spring Boot API (Campuslands IA 2, project #1).\n\nRun the folders in order (Collection Runner works): each request saves the ids it creates in collection variables, so later requests reuse them. Names and emails get a timestamp suffix, so the collection can be run many times against the same database.\n\nVariables:\n- `baseUrl`: `http://localhost:8080/api` (backend directly). Through nginx use `http://localhost:8081/api`.\n- `categoryId`, `userId`, `incidentId`, `articleId`, `responseId`: filled in by the requests.\n\nThe assistant requests need n8n, Qdrant and a valid OpenRouter key in `.env`.",
+    "description": "Every endpoint of the Spring Boot API (Campuslands IA 2, project #1).\n\nRun the folders in order (Collection Runner works): each request saves the ids it creates in collection variables, so later requests reuse them. Names and emails get a timestamp suffix, so the collection can be run many times against the same database.\n\nVariables:\n- `baseUrl`: `http://localhost:8080/api` (backend directly). Through nginx use `http://localhost:8081/api`.\n- `categoryId`, `userId`, `incidentId`, `articleId`, `responseId`, `analyticsTotal`: filled in by the requests.\n\nThe assistant requests need n8n, Qdrant and a valid OpenRouter key in `.env`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,7 +10,8 @@
     { "key": "userId", "value": "" },
     { "key": "incidentId", "value": "" },
     { "key": "articleId", "value": "" },
-    { "key": "responseId", "value": "" }
+    { "key": "responseId", "value": "" },
+    { "key": "analyticsTotal", "value": "" }
   ],
   "item": [
     {
@@ -424,7 +425,98 @@
       ]
     },
     {
-      "name": "7. Cleanup (optional)",
+      "name": "7. Analytics",
+      "description": "Dashboard indicators (RF06, RF07). Every endpoint accepts the optional filters from, to, categoryId and priority. The requests cross-check each other: every breakdown must add up to the summary total.",
+      "item": [
+        {
+          "name": "Summary",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/summary" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const s = pm.response.json();",
+            "pm.test('resolved is part of the total', () => pm.expect(s.resolved).to.be.at.most(s.total));",
+            "pm.test('resolution rate is resolved / total', () => { if (s.total > 0) pm.expect(s.resolutionRate).to.be.closeTo(s.resolved * 100 / s.total, 0.01); });",
+            "pm.collectionVariables.set('analyticsTotal', s.total);"
+          ] } }]
+        },
+        {
+          "name": "By category",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/by-category" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const rows = pm.response.json();",
+            "pm.test('categories add up to the summary total', () => pm.expect(rows.reduce((s, r) => s + r.incidents, 0)).to.eql(Number(pm.collectionVariables.get('analyticsTotal'))));",
+            "pm.test('percentages add up to 100', () => pm.expect(rows.reduce((s, r) => s + r.percentage, 0)).to.be.closeTo(100, 0.1));",
+            "pm.test('most frequent first', () => rows.slice(1).forEach((r, i) => pm.expect(r.incidents).to.be.at.most(rows[i].incidents)));"
+          ] } }]
+        },
+        {
+          "name": "By priority",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/by-priority" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const rows = pm.response.json();",
+            "pm.test('priorities add up to the summary total', () => pm.expect(rows.reduce((s, r) => s + r.incidents, 0)).to.eql(Number(pm.collectionVariables.get('analyticsTotal'))));",
+            "pm.test('percentages add up to 100', () => pm.expect(rows.reduce((s, r) => s + r.percentage, 0)).to.be.closeTo(100, 0.1));"
+          ] } }]
+        },
+        {
+          "name": "Weekly trend (test 5)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/weekly-trend" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const rows = pm.response.json();",
+            "pm.test('weeks add up to the summary total', () => pm.expect(rows.reduce((s, r) => s + r.incidents, 0)).to.eql(Number(pm.collectionVariables.get('analyticsTotal'))));",
+            "pm.test('weeks start on Monday', () => rows.forEach(r => pm.expect(new Date(r.periodStart + 'T12:00:00Z').getUTCDay()).to.eql(1)));"
+          ] } }]
+        },
+        {
+          "name": "Monthly totals",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/monthly" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const rows = pm.response.json();",
+            "pm.test('months add up to the summary total', () => pm.expect(rows.reduce((s, r) => s + r.incidents, 0)).to.eql(Number(pm.collectionVariables.get('analyticsTotal'))));"
+          ] } }]
+        },
+        {
+          "name": "Resolution time per category",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/resolution-time" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('average hours are not negative', () => pm.response.json().forEach(r => { if (r.avgHours !== null) pm.expect(r.avgHours).to.be.at.least(0); }));"
+          ] } }]
+        },
+        {
+          "name": "Filtered by category (test 4)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/by-category?categoryId={{categoryId}}" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('only the filtered category, at 100 %', () => pm.response.json().forEach(r => {",
+            "    pm.expect(r.categoryId).to.eql(Number(pm.collectionVariables.get('categoryId')));",
+            "    pm.expect(r.percentage).to.be.closeTo(100, 0.01);",
+            "}));"
+          ] } }]
+        },
+        {
+          "name": "Summary with all filters",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/summary?from=2026-01-01&to=2026-12-31&categoryId={{categoryId}}&priority=P2" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('counts the incident created by this run', () => pm.expect(pm.response.json().total).to.be.at.least(1));"
+          ] } }]
+        },
+        {
+          "name": "Inverted date range (400)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/analytics/summary?from=2026-11-01&to=2026-10-01" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "8. Cleanup (optional)",
       "item": [
         {
           "name": "Delete category in use (409)",
