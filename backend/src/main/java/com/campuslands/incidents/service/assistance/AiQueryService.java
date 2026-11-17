@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.campuslands.incidents.client.N8nClient;
 import com.campuslands.incidents.config.N8nProperties;
@@ -48,6 +49,7 @@ public class AiQueryService {
 
     static final String EMPTY_RESPONSE = "AI service returned an empty response";
     static final String UNEXPECTED_STATUS = "AI service returned an unexpected status: ";
+    static final int MAX_ERROR_LENGTH = 500;
 
     private static final Logger log = LoggerFactory.getLogger(AiQueryService.class);
 
@@ -96,8 +98,10 @@ public class AiQueryService {
                     new RagRequest(query.getId(), query.getQuestion(),
                             ragProperties.similarityThreshold(), ragProperties.topK()),
                     RagResponse.class);
-        } catch (AiServiceException | RestClientException e) {
+        } catch (AiServiceException e) {
             // N8nClient already logged the HTTP details
+            return fail(query, failureReason(e));
+        } catch (RestClientException e) {
             return fail(query, e.getMessage());
         }
 
@@ -110,6 +114,25 @@ public class AiQueryService {
             case "ERROR" -> fail(query, rag.error() != null ? rag.error() : "AI service reported an error");
             default -> fail(query, UNEXPECTED_STATUS + rag.status());
         };
+    }
+
+    /**
+     * When n8n answers with an error status it still sends the contract body, whose {@code error} names the
+     * failing step (e.g. "Embed question failed: ..."). Keeping it in the history tells support what broke.
+     */
+    private String failureReason(AiServiceException e) {
+        if (e.getCause() instanceof RestClientResponseException http) {
+            try {
+                RagResponse body = objectMapper.readValue(http.getResponseBodyAsString(), RagResponse.class);
+                if (body != null && body.error() != null && !body.error().isBlank()) {
+                    String reason = e.getMessage() + ": " + body.error().strip();
+                    return reason.length() > MAX_ERROR_LENGTH ? reason.substring(0, MAX_ERROR_LENGTH) : reason;
+                }
+            } catch (RuntimeException ignored) {
+                // Not the contract body (e.g. an HTML error page): keep the generic message
+            }
+        }
+        return e.getMessage();
     }
 
     private AssistanceResponse complete(AiQuery query, RagResponse rag) {

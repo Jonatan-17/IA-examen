@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.campuslands.incidents.client.N8nClient;
 import com.campuslands.incidents.config.N8nProperties;
@@ -155,6 +157,32 @@ class AiQueryServiceTest {
         assertThat(result.errorMessage()).isEqualTo("AI service is unavailable or timed out");
         assertThat(savedQuery().getStatus()).isEqualTo(QueryStatus.ERROR);
         assertThat(savedQuery().getErrorMessage()).isEqualTo("AI service is unavailable or timed out");
+    }
+
+    @Test
+    void failingStepReportedByN8nIsKeptInTheErrorMessage() {
+        RestClientResponseException http = new RestClientResponseException("502 Bad Gateway", 502, "Bad Gateway",
+                null, "{\"status\":\"ERROR\",\"answer\":null,\"sources\":[],\"error\":\"Embed question failed: 401 Unauthorized\"}"
+                        .getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        when(n8nClient.post(eq(RAG_PATH), any(), eq(RagResponse.class)))
+                .thenThrow(new AiServiceException("AI service responded with error 502", http));
+
+        AssistanceResponse result = service.assist(INCIDENT_ID, "Sin internet");
+
+        assertThat(result.status()).isEqualTo(QueryStatus.ERROR);
+        assertThat(result.errorMessage())
+                .isEqualTo("AI service responded with error 502: Embed question failed: 401 Unauthorized");
+    }
+
+    @Test
+    void errorBodyThatIsNotTheContractKeepsTheGenericMessage() {
+        RestClientResponseException http = new RestClientResponseException("502 Bad Gateway", 502, "Bad Gateway",
+                null, "<html>Bad Gateway</html>".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        when(n8nClient.post(eq(RAG_PATH), any(), eq(RagResponse.class)))
+                .thenThrow(new AiServiceException("AI service responded with error 502", http));
+
+        assertThat(service.assist(INCIDENT_ID, "Sin internet").errorMessage())
+                .isEqualTo("AI service responded with error 502");
     }
 
     @Test

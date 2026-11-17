@@ -90,13 +90,13 @@ Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-ba
 - [x] `AiQueryService`: create the query as PENDING, call n8n and validate that the sources exist and are active in the database
 - [ ] Save the answer and its sources, with status ANSWERED, NO_RESULTS or ERROR
 - [x] Endpoint `POST /api/incidents/{id}/assistance` with `@NotBlank` on the description
-- [ ] **AI assistant** view: solution, steps, sources and similarities
+- [x] **AI assistant** view: solution, steps, sources and similarities
 
 **Phase 3**
 - [x] Calibrate the threshold with relevant and irrelevant questions, and document the result
-- [ ] Tests 1, 2, 3, 6, 7 and 8 (test 8 uses an invalid API key)
+- [x] Tests 1, 2, 3, 6, 7 and 8 (test 8 uses an invalid API key)
 - [x] Export the workflows to `n8n/workflows/` and check that they contain no keys
-- [ ] Architecture diagram
+- [x] Architecture diagram
 
 Branches: `feature/n8n-indexing`, `feature/n8n-rag`, `feature/rag-assistant`, `feature/assistant-ui`
 
