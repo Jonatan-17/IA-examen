@@ -128,6 +128,14 @@ main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 .badge-query-pending { color: var(--primary); border-color: var(--primary); }
 .badge-query-error { color: var(--error); border-color: var(--error); }
 
+/* AI assistant view (views/assistant.js) */
+.assistant-header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.assistant-header h3 { margin: 0; }
+.assistant-result h4 { margin: 0.9rem 0 0.35rem; font-size: 0.9rem; color: var(--muted); }
+.assistant-result p, .assistant-result ol { margin: 0 0 0.5rem; line-height: 1.45; }
+.assistant-result ol { padding-left: 1.3rem; }
+.assistant-footer { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
 /* ---------------------------------------------------------------------
    Cards and forms, shared by the views (incidents, knowledge base...).
    --------------------------------------------------------------------- */
