@@ -5,7 +5,7 @@ This document consolidates the results of the 10 mandatory functional tests in t
 | Tests | Module | Evidence |
 |---|---|---|
 | 1, 2, 3, 6, 7, 8 | C: AI and RAG (Mic022) | [ai-tests.md](ai-tests.md) |
-| 4, 5 | A: data and analytics (Jonatan-17) | *Pending* |
+| 4, 5 | A: data and analytics (Jonatan-17) | [analytics-tests.md](analytics-tests.md) |
 | 9, 10 | B: management and operations (Nic-tolb) | [history-rating-tests.md](history-rating-tests.md) |
 
 Member B consolidated them in this document.
@@ -18,6 +18,7 @@ Member B consolidated them in this document.
 | Models (OpenRouter) | Embeddings `baai/bge-m3` (1024 dimensions), chat `anthropic/claude-haiku-5.5` |
 | RAG settings | Similarity threshold 0.60, top-k 5 ([calibration](../threshold-calibration.md)) |
 | Knowledge base | 25 active and verified articles indexed in Qdrant. At least one topic has no article, for test 3 ([topics](../knowledge-topics.md)) |
+| Analytics data (tests 4, 5) | Clean database loaded with `01_schema.sql` and `02_seed.sql`: 150 synthetic incidents from 2026-08-10 to 2026-11-01, grouped in Bogotá time ([generation rules](../data-analysis-report/synthetic-data.md)) |
 | Date | 2026-11-17 |
 
 Every test goes through Spring Boot, either through the API or through the frontend served by nginx. n8n, Qdrant and OpenRouter are never called directly, as the business rules require.
@@ -29,15 +30,15 @@ Every test goes through Spring Boot, either through the API or through the front
 | 1 | Registrar un incidente de conectividad a internet y obtener soluciones relevantes mediante RAG | **Pass** | `ANSWERED`. Source "Sin acceso a internet en el equipo" (similarity 0.641), 7 steps |
 | 2 | Consultar un error de ejecución en una aplicación y verificar los artículos recuperados | **Pass** | `ANSWERED`. Source "Error de ejecución en la aplicación de facturación" (0.791) |
 | 3 | Registrar un incidente sin información suficiente y comprobar que el modelo no invente soluciones | **Pass** | `NO_RESULTS` with no answer and no sources. The language model is not called |
-| 4 | Consultar incidentes de una categoría específica y verificar que coincidan con la base relacional | *Pending* | Member A |
-| 5 | Visualizar la evolución semanal y comprobar los valores mediante consultas SQL | *Pending* | Member A |
+| 4 | Consultar incidentes de una categoría específica y verificar que coincidan con la base relacional | **Pass** | Category *Aplicaciones*: 27 incidents in the list, in the dashboard and in SQL, with the same ids. With date, category and priority filters the counts still match |
+| 5 | Visualizar la evolución semanal y comprobar los valores mediante consultas SQL | **Pass** | The 12 weeks of the dashboard chart match `weekly_trend.sql` (150 incidents in total) |
 | 6 | Desactivar un artículo y verificar que no vuelva a utilizarse como fuente | **Pass** | With the article deactivated, the same question gives `NO_RESULTS`. Once reactivated, it is a source again |
 | 7 | Enviar una descripción vacía y comprobar que no se ejecute el flujo inteligente | **Pass** | 400 with `fields.description`. No query is stored |
 | 8 | Simular un fallo en el servicio de embeddings y verificar el manejo de errores | **Pass** | Invalid OpenRouter key: HTTP 200, the query is stored as `ERROR` and the message names the step that failed (`Embed question failed: 401`) |
 | 9 | Consultar el historial de asistencias generadas para un incidente | **Pass** | History with `ANSWERED` and `NO_RESULTS` queries, steps, sources with similarity and rating. Unknown incident: 404 |
 | 10 | Calificar una respuesta y verificar la persistencia del registro | **Pass** | Rated 4 from the UI: 201, row stored in `ratings`, returned by the history. A second rating gets 409 |
 
-**Result: 8 of 10 passed, 2 pending (member A).**
+**Result: 10 of 10 passed.**
 
 ## Details by test
 
@@ -50,11 +51,24 @@ Evidence: [ai-tests.md](ai-tests.md) with screenshots of the Asistente IA view (
 
 ### Test 4: incidents of a category vs the relational database
 
-*Pending (member A).* Compare the incident list filtered by category, in the UI or with `GET /api/incidents?categoryId=…`, with the matching SQL query.
+The incident list (`GET /api/incidents?categoryId=4`) and the dashboard (`GET /api/analytics/by-category?categoryId=4`) were compared with direct SQL counts on the same database:
+- **Category alone:** 27 incidents of *Aplicaciones* in the list, in the dashboard and in SQL, and the ids match.
+- **With filters:** adding a date range, or a category plus a priority, the counts still match (10 and 9 incidents).
+- **Without filters:** the per-category distribution matches `by_category.sql` (41 / 37 / 27 / 23 / 22).
+
+The list and the dashboard use the same date rule (whole days in Bogotá time, end date inclusive), so both screens always show the same incidents. Evidence: [analytics-tests.md](analytics-tests.md).
 
 ### Test 5: weekly trend vs SQL
 
-*Pending (member A).* Compare the weekly trend chart in the dashboard with `database/analytics/weekly_trend.sql`.
+The *Evolución semanal* chart (`GET /api/analytics/weekly-trend`) and `database/analytics/weekly_trend.sql` give the same count for each of the 12 weeks, from 2026-08-10 to 2026-10-26, with 150 incidents in total.
+
+The other indicators match their SQL files too:
+- resolution rate: 88.00 %;
+- average resolution time per category;
+- distribution by priority;
+- monthly totals.
+
+An inverted date range gets 400. Evidence: [analytics-tests.md](analytics-tests.md), with the week-by-week comparison table. The indicators are interpreted in the [data analysis report](../data-analysis-report/README.md).
 
 ### Test 6: deactivated article
 
