@@ -130,7 +130,7 @@ PostgreSQL runs `database/init/01_schema.sql` and `02_seed.sql` when its volume 
 docker compose exec n8n n8n import:workflow --separate --input=/workflows
 docker compose exec n8n n8n publish:workflow --id=IdxArticlesFlow1
 docker compose exec n8n n8n publish:workflow --id=RagAssistFlow2
-docker compose up -d n8n
+docker compose restart n8n   # "up -d" would not restart it: nothing changed in its configuration
 
 # Index every knowledge article in Qdrant (active and verified ones are upserted, the rest removed)
 curl -X POST http://localhost:8080/api/knowledge-articles/reindex

@@ -13,7 +13,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Scripts only run when the volume is empty (docker compose down -v to reset)
+      # Scripts only run when the volume is empty. To reload them, recreate only this volume
+      # (README > Troubleshooting); "docker compose down -v" would also delete n8n and Qdrant
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]

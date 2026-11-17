@@ -10,7 +10,8 @@ docker compose exec n8n n8n import:workflow --separate --input=/workflows
 # Importing a workflow again leaves it as a draft: publish it again after every import.
 docker compose exec n8n n8n publish:workflow --id=IdxArticlesFlow1
 docker compose exec n8n n8n publish:workflow --id=RagAssistFlow2
-docker compose up -d n8n   # restarts, and also applies .env changes to the container
+docker compose restart n8n   # activates the published workflows
+# After changing .env, use "docker compose up -d n8n" instead: it recreates the container with the new values
 
 # Export after editing them in the UI (http://localhost:5678)
 docker compose exec n8n n8n export:workflow --all --separate --output=/workflows
