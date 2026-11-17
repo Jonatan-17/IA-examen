@@ -154,7 +154,7 @@ After this, creating, editing or deactivating an article from the UI keeps Qdran
 | The query ends as `ERROR` with `401` in the message | `OPENROUTER_API_KEY` is wrong. Fix it in `.env` and run `docker compose up -d n8n`. |
 | The assistant always answers `NO_RESULTS` | The articles are not indexed. Run the reindex from step 3. |
 | `port is already allocated` | Another program uses that port. Change the matching `*_PORT` in `.env`. |
-| Changes in `database/init` have no effect | The scripts only run when the volume is empty. Recreate it with `docker compose down -v && docker compose up -d`. This deletes all the data. |
+| Changes in `database/init` have no effect | The scripts only run when the volume is empty. Recreate only the PostgreSQL volume (this deletes the database data): `docker compose stop backend postgres && docker compose rm -f postgres && docker volume rm <project>_postgres_data && docker compose up -d` (check the name with `docker volume ls`), then run the reindex from step 3. Avoid `docker compose down -v`: it also deletes the n8n and Qdrant volumes, so the first-run steps would have to be repeated. |
 
 ## Testing
 
