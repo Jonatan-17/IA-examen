@@ -200,3 +200,12 @@ input:focus, select:focus, textarea:focus {
 .history-item ol { margin: 0 0 0.5rem; padding-left: 1.3rem; line-height: 1.45; }
 .history-header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
 .history-rating { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+
+/* Dashboard (RF06) */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.kpi { display: flex; flex-direction: column; gap: 0.4rem; }
+.kpi-label { font-size: 0.85rem; color: var(--muted); }
+.kpi strong { font-size: 1.6rem; color: var(--primary); }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1rem; }
+.chart-grid canvas { max-height: 300px; }
+@media (max-width: 600px) { .chart-grid { grid-template-columns: 1fr; } }
