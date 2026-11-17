@@ -44,26 +44,26 @@ Branches: `feature/db-schema`, `feature/synthetic-data`, `feature/analytics-api`
 ## Member B — Management & operations
 
 **Phase 0**
-- [ ] Request and response DTOs, with validation, for User, Category, Incident and KnowledgeArticle (does not depend on the entities)
-- [ ] Organize the frontend: one file per view in `frontend/js/views/` plus shared helpers (tables, forms, messages)
+- [x] Request and response DTOs, with validation, for User, Category, Incident and KnowledgeArticle (does not depend on the entities)
+- [x] Organize the frontend: one file per view in `frontend/js/views/` plus shared helpers (tables, forms, messages)
 
 **Phase 1** (needs A's entities)
-- [ ] CRUD for **Categories** and **Users**
-- [ ] **Incidents**: create, list, filter by category, priority, status and dates, and change the status (resolving sets `resolved_at`)
-- [ ] **Knowledge base**: article CRUD, activate and deactivate
-- [ ] On article create, update or deactivate, call `IndexingService` (interface defined by C)
-- [ ] **Incidents** and **Knowledge base** views
+- [x] CRUD for **Categories** and **Users**
+- [x] **Incidents**: create, list, filter by category, priority, status and dates, and change the status (resolving sets `resolved_at`)
+- [x] **Knowledge base**: article CRUD, activate and deactivate
+- [x] On article create, update or deactivate, call `IndexingService` (interface defined by C)
+- [x] **Incidents** and **Knowledge base** views
 
 **Phase 2**
-- [ ] **History**: `GET /api/incidents/{id}/queries` with the answer, sources and similarities
-- [ ] **Rating**: 1 to 5 with a comment, one per answer
-- [ ] **History & rating** view
+- [x] **History**: `GET /api/incidents/{id}/queries` with the answer, sources and similarities
+- [x] **Rating**: 1 to 5 with a comment, one per answer
+- [x] **History & rating** view
 
 **Phase 3**
-- [ ] Postman collection with every endpoint, plus Swagger screenshots in `docs/postman/`
-- [ ] Tests 9 and 10
-- [ ] Consolidate the testing document with the evidence provided by A and C
-- [ ] Final README
+- [x] Postman collection with every endpoint, plus Swagger screenshots in `docs/postman/`
+- [x] Tests 9 and 10
+- [x] Consolidate the testing document with the evidence provided by A and C
+- [x] Final README
 
 Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-base`, `feature/history-rating`
 
@@ -88,7 +88,7 @@ Branches: `feature/categories-users`, `feature/incidents`, `feature/knowledge-ba
 - [x] **n8n flow 2 (RAG)**: embedding, Qdrant search, threshold filter, grounded prompt and JSON response
 - [x] If nothing passes the threshold, return `NO_RESULTS` without calling the LLM
 - [x] `AiQueryService`: create the query as PENDING, call n8n and validate that the sources exist and are active in the database
-- [ ] Save the answer and its sources, with status ANSWERED, NO_RESULTS or ERROR
+- [x] Save the answer and its sources, with status ANSWERED, NO_RESULTS or ERROR
 - [x] Endpoint `POST /api/incidents/{id}/assistance` with `@NotBlank` on the description
 - [x] **AI assistant** view: solution, steps, sources and similarities
 
