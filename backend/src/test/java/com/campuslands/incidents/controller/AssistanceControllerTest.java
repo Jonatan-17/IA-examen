@@ -1,5 +1,6 @@
 package com.campuslands.incidents.controller;
 
+// en este test unitario para el controller de assistance, probamos que la respuesta del asistente llegue correctamente y que se devuelva como un JSON. Tambien probamos que si la descripcion esta en blanco o si el incidente no existe
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;

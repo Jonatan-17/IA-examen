@@ -1,5 +1,8 @@
 package com.campuslands.incidents.controller;
 
+//lo que hicimos aca fuie que creamos un test unitario para el controller de analytics, para probar que los filtros lleguen al servicio y que las listas se devuelvan como arreglos JSON. Tambien probamos que si el rango de fechas esta invertido o si la prioridad es desconocida
+
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
