@@ -1,4 +1,5 @@
 package com.campuslands.incidents.service.assistance;
+// PROBAMOS EL ASISTENTE QUE ESTE DANDO LAS RESPUESTAS CORRECTAS, QUE SE GUARDE EL QUERY Y LA RESPUESTA EN LA BASE DE DATOS, QUE LOS ARTICULOS FUERON VERIFICADOS Y ACTIVOS, QUE SI EL INCIDENTE NO EXISTE O SI EL ASISTENTE NO RESPONDE SE MANEJE EL ERROR
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
