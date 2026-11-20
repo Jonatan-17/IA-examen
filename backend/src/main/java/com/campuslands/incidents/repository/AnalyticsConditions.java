@@ -13,7 +13,7 @@ import com.campuslands.incidents.dto.analytics.AnalyticsFilter;
  * (alias {@code i}) plus their named parameters. Only the filters the client sent are added,
  * and values always travel as bind parameters, never concatenated into the SQL.
  */
-final class AnalyticsConditions {
+public final class AnalyticsConditions {
 
     private final StringBuilder sql = new StringBuilder();
     private final Map<String, Object> params = new LinkedHashMap<>();
@@ -22,7 +22,7 @@ final class AnalyticsConditions {
      * @param zone time zone that defines what a "day" is: the same one the incident list uses,
      *             so the dashboard and the list count the same incidents for a date range
      */
-    AnalyticsConditions(AnalyticsFilter filter, ZoneId zone) {
+    public AnalyticsConditions(AnalyticsFilter filter, ZoneId zone) {
         params.put("zone", zone.getId());
         if (filter.from() != null) {
             add("i.created_at >= :from", "from", startOfDay(filter.from(), zone));
@@ -40,12 +40,12 @@ final class AnalyticsConditions {
     }
 
     /** Conditions, each one starting with " AND " (empty when there are no filters). */
-    String sql() {
+    public String sql() {
         return sql.toString();
     }
 
     /** Named parameters of {@link #sql()}, plus {@code zone} for grouping by week or month. */
-    Map<String, Object> params() {
+    public Map<String, Object> params() {
         return params;
     }
 

@@ -21,6 +21,7 @@ import com.campuslands.incidents.repository.RatingRepository;
 public class RatingService {
 
     static final String ALREADY_RATED = "Esta respuesta ya fue calificada";
+    static final int LOW_SCORE = 2;
 
     private final AiResponseRepository responseRepository;
     private final RatingRepository ratingRepository;
@@ -40,6 +41,10 @@ public class RatingService {
         try {
             // Flushed here so a concurrent rating hits ratings.response_id UNIQUE inside this method
             Rating saved = ratingRepository.saveAndFlush(new Rating(response, request.score(), normalize(request.comment())));
+            // Calificación baja: sus artículos quedan marcados para revisión
+            if (request.score() <= LOW_SCORE && response.getSources() != null) {
+                response.getSources().forEach(s -> s.getArticle().setNeedsReview(true));
+            }
             return toResponse(saved, response);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException(ALREADY_RATED);

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -27,7 +28,19 @@ public record IncidentFilter(
         LocalDate from,
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate to) {
+        LocalDate to,
+
+        // Texto en título o descripción
+        @Size(max = 100, message = "La búsqueda no puede superar 100 caracteres")
+        String q,
+
+        @Positive(message = "El usuario no es válido")
+        Long userId) {
+
+    public IncidentFilter(Long categoryId, IncidentPriority priority, IncidentStatus status,
+                          LocalDate from, LocalDate to) {
+        this(categoryId, priority, status, from, to, null, null);
+    }
 
     @AssertTrue(message = "La fecha inicial no puede ser posterior a la final")
     public boolean isDateRangeValid() {

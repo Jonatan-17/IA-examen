@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -80,5 +81,18 @@ public class KnowledgeArticleController {
     @Operation(summary = "Deactivate an article; it is removed from the vector store and no longer used as a source")
     public KnowledgeArticleResponse deactivate(@PathVariable Long id) {
         return articleService.deactivate(id);
+    }
+
+    @PatchMapping("/{id}/reviewed")
+    @Operation(summary = "Clear the review flag set by low ratings")
+    public KnowledgeArticleResponse reviewed(@PathVariable Long id) {
+        return articleService.markReviewed(id);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an article never used as a source (409 otherwise)")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        articleService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

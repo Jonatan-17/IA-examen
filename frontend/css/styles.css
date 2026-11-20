@@ -209,3 +209,34 @@ input:focus, select:focus, textarea:focus {
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1rem; }
 .chart-grid canvas { max-height: 300px; }
 @media (max-width: 600px) { .chart-grid { grid-template-columns: 1fr; } }
+
+/* SLA */
+.badge-sla-on_time, .badge-sla-met { color: var(--ok); border-color: var(--ok); }
+.badge-sla-overdue { color: #fff; background: var(--error); border-color: var(--error); }
+.badge-sla-missed { color: var(--error); border-color: var(--error); }
+
+/* Detalle de incidente (views/incident-detail.js) */
+.incident-detail { border-color: var(--primary); }
+.detail-header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.detail-header h3 { margin: 0; flex: 1; }
+.detail-info { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; margin: 0.5rem 0; }
+.detail-info dt { color: var(--muted); font-size: 0.85rem; }
+.detail-info dd { margin: 0; }
+.detail-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.detail-section h4, .incident-detail > h4 { margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--muted); }
+.timeline { padding-left: 1.2rem; line-height: 1.45; }
+.timeline li { margin-bottom: 0.5rem; }
+.timeline p { margin: 0.2rem 0 0; }
+.similar-list { padding-left: 1.2rem; line-height: 1.45; }
+.similar-list p { margin: 0.2rem 0 0.6rem; }
+.ai-panel:empty { display: none; }
+
+.section-title { margin: 1.5rem 0 0.75rem; }
+
+/* Imprimir / PDF del dashboard: solo los indicadores */
+@media print {
+    .topbar, form, .no-print, .messages, .incident-detail { display: none !important; }
+    body { background: #fff; }
+    .card { break-inside: avoid; }
+    .chart-grid { grid-template-columns: 1fr 1fr; }
+}

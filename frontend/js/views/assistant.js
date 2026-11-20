@@ -5,7 +5,7 @@ import { api } from '../api.js';
 import { showMessage, showError, clearMessage } from '../ui/messages.js';
 import { showFieldErrors, clearFieldErrors } from '../ui/forms.js';
 import { renderTable } from '../ui/table.js';
-import { badge, queryStatusLabel, statusLabel, formatDate } from '../ui/format.js';
+import { badge, queryStatusLabel, statusLabel, formatDate, confidenceText } from '../ui/format.js';
 
 // Static markup only (no API data), so innerHTML is safe here. Field names match AssistanceRequest.
 const FORM_HTML = `
@@ -137,6 +137,7 @@ function renderResult(card, result, incident) {
 
     if (result.status === 'ANSWERED' && result.answer) {
         card.append(text('h4', null, 'Solución sugerida'), text('p', null, result.answer.solution));
+        if (confidenceText(result.answer)) card.append(text('p', 'muted', confidenceText(result.answer)));
 
         if (result.answer.steps?.length) {
             card.append(text('h4', null, 'Pasos recomendados'));

@@ -23,6 +23,24 @@ export const QUERY_STATUS_LABELS = Object.freeze({
     ERROR: 'Error',
 });
 
+/** Estado del SLA de un incidente. */
+export const SLA_LABELS = Object.freeze({
+    ON_TIME: 'En plazo',
+    OVERDUE: 'Vencido',
+    MET: 'Cumplido',
+    MISSED: 'Incumplido',
+});
+
+export const slaLabel = value => SLA_LABELS[value] ?? value ?? '';
+
+/** "Confianza: alta · Recomienda escalar a soporte" ('' si la respuesta no lo trae). */
+export function confidenceText(answer) {
+    const parts = [];
+    if (answer?.confidence) parts.push(`Confianza: ${answer.confidence}`);
+    if (answer?.escalate === true) parts.push('Recomienda escalar a soporte');
+    if (answer?.escalate === false) parts.push('No requiere escalar');
+    return parts.join(' · ');
+}
 export const priorityLabel = value => PRIORITY_LABELS[value] ?? value ?? '';
 export const statusLabel = value => STATUS_LABELS[value] ?? value ?? '';
 export const queryStatusLabel = value => QUERY_STATUS_LABELS[value] ?? value ?? '';

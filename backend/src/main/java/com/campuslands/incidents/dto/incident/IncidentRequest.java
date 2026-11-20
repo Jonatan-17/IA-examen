@@ -34,7 +34,21 @@ public record IncidentRequest(
 
         @NotNull(message = "El usuario responsable es obligatorio")
         @Positive(message = "El usuario no es válido")
-        Long userId) {
+        Long userId,
+
+        // Opcionales: lo que sugirió la IA, para medir su acierto
+        @Positive(message = "La categoría sugerida no es válida")
+        Long suggestedCategoryId,
+
+        IncidentPriority suggestedPriority,
+
+        @Size(max = 100, message = "La ubicación no puede superar 100 caracteres")
+        String location) {
+
+    public IncidentRequest(String title, String description, Long categoryId, IncidentPriority priority,
+                           IncidentStatus status, Long userId) {
+        this(title, description, categoryId, priority, status, userId, null, null, null);
+    }
 
     /** Status to store: the one sent by the client, or OPEN when it was omitted. */
     public IncidentStatus statusOrDefault() {

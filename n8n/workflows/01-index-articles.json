@@ -95,6 +95,9 @@
       "typeVersion": 4.2,
       "position": [880, 100],
       "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "parameters": {
         "method": "POST",
         "url": "={{ $env.OPENROUTER_BASE_URL }}/embeddings",
@@ -129,6 +132,9 @@
       "typeVersion": 4.2,
       "position": [1320, 0],
       "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "parameters": {
         "method": "PUT",
         "url": "={{ $env.QDRANT_URL }}/collections/{{ $env.QDRANT_COLLECTION }}/points?wait=true",
@@ -167,6 +173,9 @@
       "typeVersion": 4.2,
       "position": [1760, 100],
       "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "parameters": {
         "method": "POST",
         "url": "={{ $env.QDRANT_URL }}/collections/{{ $env.QDRANT_COLLECTION }}/points/delete?wait=true",

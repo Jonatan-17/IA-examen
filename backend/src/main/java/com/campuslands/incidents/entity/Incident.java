@@ -57,6 +57,21 @@ public class Incident {
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
+    @Column(length = 100)
+    private String location;
+
+    // Cómo se resolvió (opcional)
+    @Column(columnDefinition = "text")
+    private String resolution;
+
+    // Sugerencias de la IA al registrar, para medir su acierto
+    @Column(name = "suggested_category_id")
+    private Long suggestedCategoryId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "suggested_priority", length = 2)
+    private IncidentPriority suggestedPriority;
+
     protected Incident() {
         // required by JPA
     }
@@ -156,5 +171,37 @@ public class Incident {
 
     public Instant getResolvedAt() {
         return resolvedAt;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getResolution() {
+        return resolution;
+    }
+
+    public void setResolution(String resolution) {
+        this.resolution = resolution;
+    }
+
+    public Long getSuggestedCategoryId() {
+        return suggestedCategoryId;
+    }
+
+    public void setSuggestedCategoryId(Long suggestedCategoryId) {
+        this.suggestedCategoryId = suggestedCategoryId;
+    }
+
+    public IncidentPriority getSuggestedPriority() {
+        return suggestedPriority;
+    }
+
+    public void setSuggestedPriority(IncidentPriority suggestedPriority) {
+        this.suggestedPriority = suggestedPriority;
     }
 }

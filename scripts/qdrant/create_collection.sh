@@ -13,23 +13,29 @@ if [[ -f "$ROOT_DIR/.env" ]]; then
     # Only read the variables this script needs (never source the whole .env)
     QDRANT_PORT="${QDRANT_PORT:-$(grep -E '^QDRANT_PORT=' "$ROOT_DIR/.env" | cut -d= -f2-)}"
     QDRANT_COLLECTION="${QDRANT_COLLECTION:-$(grep -E '^QDRANT_COLLECTION=' "$ROOT_DIR/.env" | cut -d= -f2-)}"
+    QDRANT_INCIDENTS_COLLECTION="${QDRANT_INCIDENTS_COLLECTION:-$(grep -E '^QDRANT_INCIDENTS_COLLECTION=' "$ROOT_DIR/.env" | cut -d= -f2-)}"
 fi
 
 QDRANT_URL="${QDRANT_URL:-http://localhost:${QDRANT_PORT:-6333}}"
-COLLECTION="${QDRANT_COLLECTION:-knowledge_articles}"
 VECTOR_SIZE="${VECTOR_SIZE:-1024}"
 DISTANCE="Cosine"
 
-status=$(curl -s -o /dev/null -w '%{http_code}' "$QDRANT_URL/collections/$COLLECTION")
-if [[ "$status" == "200" ]]; then
-    echo "Collection '$COLLECTION' already exists:"
-    curl -s "$QDRANT_URL/collections/$COLLECTION" | grep -o '"vectors":{[^}]*}' || true
-    exit 0
-fi
+# Crea una colección si no existe
+create_collection() {
+    local collection="$1"
+    status=$(curl -s -o /dev/null -w '%{http_code}' "$QDRANT_URL/collections/$collection")
+    if [[ "$status" == "200" ]]; then
+        echo "Collection '$collection' already exists"
+        return
+    fi
+    echo "Creating collection '$collection' (size=$VECTOR_SIZE, distance=$DISTANCE) at $QDRANT_URL"
+    curl -sf -X PUT "$QDRANT_URL/collections/$collection" \
+        -H 'Content-Type: application/json' \
+        -d "{\"vectors\": {\"size\": $VECTOR_SIZE, \"distance\": \"$DISTANCE\"}}"
+    echo
+}
 
-echo "Creating collection '$COLLECTION' (size=$VECTOR_SIZE, distance=$DISTANCE) at $QDRANT_URL"
-curl -sf -X PUT "$QDRANT_URL/collections/$COLLECTION" \
-    -H 'Content-Type: application/json' \
-    -d "{\"vectors\": {\"size\": $VECTOR_SIZE, \"distance\": \"$DISTANCE\"}}"
-echo
+# Artículos (RAG) e incidentes resueltos (similares)
+create_collection "${QDRANT_COLLECTION:-knowledge_articles}"
+create_collection "${QDRANT_INCIDENTS_COLLECTION:-incidents}"
 echo "Done."

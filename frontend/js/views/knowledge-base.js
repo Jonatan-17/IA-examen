@@ -44,6 +44,19 @@ const FORM_HTML = `
         </div>
     </form>`;
 
+const SEARCH_HTML = `
+    <h3>Búsqueda semántica</h3>
+    <form class="form-grid" novalidate>
+        <div class="field field-wide">
+            <label for="article-search">Describe el problema con tus palabras</label>
+            <input id="article-search" name="q" maxlength="500">
+        </div>
+        <div class="form-actions field-wide">
+            <button type="submit" class="btn">Buscar</button>
+        </div>
+    </form>
+    <div class="table-container"></div>`;
+
 /** Called once, the first time the view is opened. */
 export async function init(section) {
     const messages = document.createElement('div');
@@ -60,7 +73,14 @@ export async function init(section) {
     const table = document.createElement('div');
     listCard.append(listTitle, table);
 
-    section.append(messages, formCard, listCard);
+    // Búsqueda semántica (sin generar respuesta)
+    const searchCard = document.createElement('div');
+    searchCard.className = 'card';
+    searchCard.innerHTML = SEARCH_HTML; // static markup only
+    const searchForm = searchCard.querySelector('form');
+    const searchResults = searchCard.querySelector('.table-container');
+
+    section.append(messages, searchCard, formCard, listCard);
 
     const form = formCard.querySelector('form');
     const formTitle = formCard.querySelector('[data-role="form-title"]');
@@ -81,6 +101,11 @@ export async function init(section) {
 
     form.addEventListener('submit', event => submitArticle(event, form, state, messages, section));
     form.addEventListener('reset', cancelEdit);
+
+    searchForm.addEventListener('submit', event => {
+        event.preventDefault();
+        searchArticles(searchForm, searchResults, messages, startEdit);
+    });
 
     const reload = () => loadArticles(table, messages, section, startEdit);
     section.addEventListener(ARTICLES_CHANGED, reload);
@@ -137,6 +162,8 @@ function renderArticles(table, articles, messages, section, onEdit) {
         { header: 'Estado', value: a => badge(a.active ? 'Activo' : 'Inactivo', a.active ? 'status-open' : 'query-no_results') },
         { header: 'Verificado', value: a => a.verified ? 'Sí' : 'No' },
         { header: 'Fuente IA', value: a => badge(a.usableAsSource ? 'Sí' : 'No', a.usableAsSource ? 'status-resolved' : 'query-no_results') },
+        // Marcado por calificaciones bajas (1-2) de respuestas que lo usaron
+        { header: 'Revisión', value: a => a.needsReview ? badge('Revisar', 'query-error') : null },
         { header: 'Actualizado', value: a => formatDate(a.updatedAt) },
         {
             header: 'Acciones',
@@ -144,6 +171,8 @@ function renderArticles(table, articles, messages, section, onEdit) {
                 { label: 'Editar', onClick: onEdit },
                 { label: 'Desactivar', visible: a => a.active, onClick: a => setActive(a, false, messages, section) },
                 { label: 'Activar', visible: a => !a.active, onClick: a => setActive(a, true, messages, section) },
+                { label: 'Marcar revisado', visible: a => a.needsReview, onClick: a => markReviewed(a, messages, section) },
+                { label: 'Eliminar', onClick: a => removeArticle(a, messages, section) },
             ],
         },
     ], articles, { emptyText: 'No hay artículos registrados.' });
@@ -166,4 +195,66 @@ function sourceNote(article) {
     return article.usableAsSource
         ? 'La IA puede usarlo como fuente.'
         : 'La IA no lo usará como fuente.';
+}
+
+/** GET /api/knowledge-articles/search: artículos ordenados por similitud. */
+async function searchArticles(form, container, messages, onEdit) {
+    clearMessage(messages);
+    const q = form.elements.q.value.trim();
+    if (!q) {
+        showMessage(messages, 'Escribe qué quieres buscar.', 'error');
+        return;
+    }
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+        const results = await api('/knowledge-articles/search', { params: { q } });
+        renderTable(container, [
+            { header: 'Similitud', value: r => `${Math.round(r.similarity * 100)} %` },
+            { header: '#', value: r => r.id },
+            { header: 'Título', value: r => r.title },
+            { header: 'Fuente IA', value: r => badge(r.usableAsSource ? 'Sí' : 'No', r.usableAsSource ? 'status-resolved' : 'query-no_results') },
+            {
+                header: 'Acciones',
+                actions: [{
+                    label: 'Editar',
+                    onClick: async r => {
+                        try {
+                            onEdit(await api(`/knowledge-articles/${r.id}`));
+                        } catch (error) {
+                            showError(messages, error);
+                        }
+                    },
+                }],
+            },
+        ], results, { emptyText: 'No hay artículos parecidos.' });
+    } catch (error) {
+        showError(messages, error);
+    } finally {
+        button.disabled = false;
+    }
+}
+
+/** DELETE /{id}: el backend responde 409 si el artículo ya fue fuente de la IA. */
+async function removeArticle(article, messages, section) {
+    if (!window.confirm(`¿Eliminar el artículo #${article.id}?`)) return;
+    clearMessage(messages);
+    try {
+        await api(`/knowledge-articles/${article.id}`, { method: 'DELETE' });
+        showMessage(messages, `Artículo #${article.id} eliminado.`, 'success');
+        section.dispatchEvent(new CustomEvent(ARTICLES_CHANGED));
+    } catch (error) {
+        showError(messages, error);
+    }
+}
+
+async function markReviewed(article, messages, section) {
+    clearMessage(messages);
+    try {
+        await api(`/knowledge-articles/${article.id}/reviewed`, { method: 'PATCH' });
+        showMessage(messages, `Artículo #${article.id} marcado como revisado.`, 'success');
+        section.dispatchEvent(new CustomEvent(ARTICLES_CHANGED));
+    } catch (error) {
+        showError(messages, error);
+    }
 }

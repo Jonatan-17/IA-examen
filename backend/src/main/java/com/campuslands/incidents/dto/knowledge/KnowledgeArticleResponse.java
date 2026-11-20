@@ -20,5 +20,6 @@ public record KnowledgeArticleResponse(
         boolean verified,
         boolean usableAsSource,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        boolean needsReview) {
 }

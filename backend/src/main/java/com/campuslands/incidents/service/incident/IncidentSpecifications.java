@@ -33,7 +33,20 @@ final class IncidentSpecifications {
         if (filter.status() != null) specs.add(hasStatus(filter.status()));
         if (filter.from() != null) specs.add(createdFrom(filter.from(), zone));
         if (filter.to() != null) specs.add(createdUntil(filter.to(), zone));
+        if (filter.userId() != null) specs.add(hasUser(filter.userId()));
+        if (filter.q() != null && !filter.q().isBlank()) specs.add(containsText(filter.q()));
         return Specification.allOf(specs);
+    }
+
+    static Specification<Incident> hasUser(Long userId) {
+        return (root, query, cb) -> cb.equal(root.get("user").get("id"), userId);
+    }
+
+    static Specification<Incident> containsText(String text) {
+        String pattern = "%" + text.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("title")), pattern),
+                cb.like(cb.lower(root.get("description")), pattern));
     }
 
     static Specification<Incident> hasCategory(Long categoryId) {

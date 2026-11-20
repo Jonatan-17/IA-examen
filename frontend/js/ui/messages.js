@@ -44,7 +44,8 @@ export function errorText(error) {
     switch (error.status) {
         case 400: return 'Revisa los datos ingresados.';
         case 404: return 'El registro solicitado no existe.';
-        case 409: return 'La operación entra en conflicto con datos existentes.';
+        // Los mensajes de conflicto (reglas de negocio) ya vienen en español
+        case 409: return error.body?.message || 'La operación entra en conflicto con datos existentes.';
         case 502: return 'El servicio de IA no está disponible en este momento.';
         default: return 'Ocurrió un error inesperado. Intenta de nuevo.';
     }

@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import { showMessage, showError, clearMessage } from '../ui/messages.js';
 import { readForm, showFieldErrors, clearFieldErrors } from '../ui/forms.js';
 import { renderTable } from '../ui/table.js';
-import { badge, queryStatusLabel, statusLabel, formatDate } from '../ui/format.js';
+import { badge, queryStatusLabel, statusLabel, formatDate, confidenceText } from '../ui/format.js';
 
 const SCORE_LABELS = { 5: '5 · Muy útil', 4: '4 · Útil', 3: '3 · Regular', 2: '2 · Poco útil', 1: '1 · Nada útil' };
 
@@ -106,6 +106,7 @@ function queryCard(query, messages) {
 function answerBlock(answer) {
     const block = el('div', 'history-answer');
     block.append(labeled('Solución sugerida', answer.solution));
+    if (confidenceText(answer)) block.append(text('p', 'muted', confidenceText(answer)));
     if (answer.steps.length > 0) {
         block.append(text('h4', null, 'Pasos recomendados'));
         const steps = el('ol');

@@ -30,6 +30,8 @@ import com.campuslands.incidents.entity.enums.IncidentStatus;
 import com.campuslands.incidents.exception.ResourceNotFoundException;
 import com.campuslands.incidents.repository.CategoryRepository;
 import com.campuslands.incidents.repository.IncidentRepository;
+import com.campuslands.incidents.repository.IncidentActivityRepository;
+import com.campuslands.incidents.repository.SlaPolicyRepository;
 import com.campuslands.incidents.repository.UserRepository;
 
 class IncidentServiceTest {
@@ -38,7 +40,8 @@ class IncidentServiceTest {
     private final CategoryRepository categoryRepository = mock(CategoryRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
     private final IncidentService service =
-            new IncidentService(incidentRepository, categoryRepository, userRepository, "America/Bogota");
+            new IncidentService(incidentRepository, categoryRepository, userRepository,
+                    mock(SlaPolicyRepository.class), mock(IncidentActivityRepository.class), "America/Bogota");
 
     private final Category connectivity = withId(new Category("Conectividad", null), 2L);
     private final User laura = withId(new User("Laura Gómez", "laura@empresa.com", "Finanzas"), 5L);

@@ -22,5 +22,19 @@ public record IncidentResponse(
         Long userId,
         String userName,
         Instant createdAt,
-        Instant resolvedAt) {
+        Instant resolvedAt,
+        String resolution,
+        Long suggestedCategoryId,
+        IncidentPriority suggestedPriority,
+        Instant slaDueAt,
+        // ON_TIME / OVERDUE (abierto) o MET / MISSED (resuelto); null si no hay SLA
+        String slaStatus,
+        String location) {
+
+    public IncidentResponse(Long id, String title, String description, IncidentPriority priority,
+                            IncidentStatus status, Long categoryId, String categoryName, Long userId,
+                            String userName, Instant createdAt, Instant resolvedAt) {
+        this(id, title, description, priority, status, categoryId, categoryName, userId, userName,
+                createdAt, resolvedAt, null, null, null, null, null, null);
+    }
 }

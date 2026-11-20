@@ -21,12 +21,13 @@ import com.campuslands.incidents.dto.knowledge.KnowledgeArticleResponse;
 import com.campuslands.incidents.entity.KnowledgeArticle;
 import com.campuslands.incidents.exception.ResourceNotFoundException;
 import com.campuslands.incidents.repository.KnowledgeArticleRepository;
+import com.campuslands.incidents.repository.ResponseSourceRepository;
 
 class KnowledgeArticleServiceTest {
 
     private final KnowledgeArticleRepository repository = mock(KnowledgeArticleRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final KnowledgeArticleService service = new KnowledgeArticleService(repository, events);
+    private final KnowledgeArticleService service = new KnowledgeArticleService(repository, mock(ResponseSourceRepository.class), events);
 
     private static KnowledgeArticleRequest request(Boolean verified) {
         return new KnowledgeArticleRequest(" Sin conexión Wi-Fi ", "No conecta", "Ícono con X",

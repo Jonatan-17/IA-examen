@@ -10,13 +10,19 @@ export class ApiError extends Error {
     }
 }
 
-export async function api(path, { method = 'GET', body, params } = {}) {
+// URL completa con parámetros (también sirve para descargas, p. ej. el CSV)
+export function apiUrl(path, params) {
     const url = new URL(API_BASE + path, window.location.origin);
     if (params) {
         Object.entries(params)
             .filter(([, v]) => v !== undefined && v !== null && v !== '')
             .forEach(([k, v]) => url.searchParams.append(k, v));
     }
+    return url;
+}
+
+export async function api(path, { method = 'GET', body, params } = {}) {
+    const url = apiUrl(path, params);
 
     const resp = await fetch(url, {
         method,

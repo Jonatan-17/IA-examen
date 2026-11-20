@@ -44,6 +44,9 @@ public class KnowledgeArticle {
     @Column(nullable = false)
     private boolean verified = false;
 
+    @Column(name = "needs_review", nullable = false)
+    private boolean needsReview = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -139,6 +142,14 @@ public class KnowledgeArticle {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public boolean isNeedsReview() {
+        return needsReview;
+    }
+
+    public void setNeedsReview(boolean needsReview) {
+        this.needsReview = needsReview;
     }
 
     public Instant getCreatedAt() {

@@ -11,8 +11,10 @@ import com.campuslands.incidents.dto.indexing.ArticleIndexPayload;
 import com.campuslands.incidents.dto.knowledge.KnowledgeArticleRequest;
 import com.campuslands.incidents.dto.knowledge.KnowledgeArticleResponse;
 import com.campuslands.incidents.entity.KnowledgeArticle;
+import com.campuslands.incidents.exception.ConflictException;
 import com.campuslands.incidents.exception.ResourceNotFoundException;
 import com.campuslands.incidents.repository.KnowledgeArticleRepository;
+import com.campuslands.incidents.repository.ResponseSourceRepository;
 
 /**
  * Knowledge base (RF02): article CRUD, activation and deactivation.
@@ -30,12 +32,30 @@ public class KnowledgeArticleService {
     /** Most recently edited first. */
     static final Sort LATEST_FIRST = Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"));
 
+    static final String USED_AS_SOURCE = "El artículo ya se usó como fuente de la IA; desactívalo en lugar de eliminarlo";
+
     private final KnowledgeArticleRepository articleRepository;
+    private final ResponseSourceRepository sourceRepository;
     private final ApplicationEventPublisher events;
 
-    public KnowledgeArticleService(KnowledgeArticleRepository articleRepository, ApplicationEventPublisher events) {
+    public KnowledgeArticleService(KnowledgeArticleRepository articleRepository,
+                                   ResponseSourceRepository sourceRepository,
+                                   ApplicationEventPublisher events) {
         this.articleRepository = articleRepository;
+        this.sourceRepository = sourceRepository;
         this.events = events;
+    }
+
+    // Solo se borran artículos que nunca fueron fuente; también se quitan de Qdrant
+    @Transactional
+    public void delete(Long id) {
+        KnowledgeArticle article = getArticle(id);
+        if (sourceRepository.existsByArticleId(id)) {
+            throw new ConflictException(USED_AS_SOURCE);
+        }
+        articleRepository.delete(article);
+        events.publishEvent(new KnowledgeArticleChangedEvent(
+                new ArticleIndexPayload(id, null, null, null, null, null, false)));
     }
 
     public List<KnowledgeArticleResponse> findAll() {
@@ -75,6 +95,7 @@ public class KnowledgeArticleService {
         if (request.verified() != null) {
             article.setVerified(request.verified());
         }
+        article.setNeedsReview(false);
         publishChange(article);
         return toResponse(article);
     }
@@ -118,6 +139,14 @@ public class KnowledgeArticleService {
                 article.isVerified(),
                 article.isUsableAsSource(),
                 article.getCreatedAt(),
-                article.getUpdatedAt());
+                article.getUpdatedAt(),
+                article.isNeedsReview());
+    }
+
+    @Transactional
+    public KnowledgeArticleResponse markReviewed(Long id) {
+        KnowledgeArticle article = getArticle(id);
+        article.setNeedsReview(false);
+        return toResponse(article);
     }
 }

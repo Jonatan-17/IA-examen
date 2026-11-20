@@ -41,3 +41,9 @@ app:
     # Single source of truth: Spring Boot sends threshold and top-k to n8n on every query
     similarity-threshold: ${RAG_SIMILARITY_THRESHOLD:0.60}
     top-k: ${RAG_TOP_K:5}
+  ai-features:
+    incident-indexing-path: ${N8N_INCIDENT_INDEXING_PATH:/webhook/index-incidents}
+    search-path: ${N8N_SEARCH_PATH:/webhook/semantic-search}
+    tasks-path: ${N8N_TASKS_PATH:/webhook/ai-tasks}
+    similar-incidents-threshold: ${SIMILAR_INCIDENTS_THRESHOLD:0.60}
+    article-search-threshold: ${ARTICLE_SEARCH_THRESHOLD:0.40}
