@@ -4,6 +4,8 @@ import com.campuslands.incidents.entity.enums.IncidentPriority;
 import com.campuslands.incidents.entity.enums.IncidentStatus;
 import org.junit.jupiter.api.Test;
 
+
+// lo que realizamos fue probar que un incidente nuevo tenga el estado abierto y que no tenga fecha de resolucion, que al resolverlo se le asigne la fecha de resolucion.
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
